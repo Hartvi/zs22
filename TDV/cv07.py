@@ -184,14 +184,16 @@ class CameraContainer:
                     u_index_in_ordered_cam_i = Xu_i[sp_name]
                     match_indices_between_ordered_cam_i_and_k = self.ms[ord_cam_i][ord_cam_k]
                     match_indices_in_ordered_cam_i, match_indices_in_ordered_cam_k = match_indices_between_ordered_cam_i_and_k
-                    index_of_match_with_ordered_cam_k = np.where(u_index_in_ordered_cam_i == match_indices_in_ordered_cam_i)[0]
-                    if index_of_match_with_ordered_cam_k.shape[0] != 0:  # match exists
-                        index_of_match_with_ordered_cam_k = index_of_match_with_ordered_cam_k[0]  # take the first one
-                        # ordered_cam_i already has the sp_name:
-                        self.Xus[ord_cam_k][sp_name] = match_indices_in_ordered_cam_i[index_of_match_with_ordered_cam_k]
-                        # delete column of the match
-                        match_indices_between_ordered_cam_i_and_k = np.delete(match_indices_between_ordered_cam_i_and_k, index_of_match_with_ordered_cam_k, 1)
-                        self.ms[ord_cam_i][ord_cam_k] = match_indices_between_ordered_cam_i_and_k
+                    indices_of_match_with_ordered_cam_k = np.where(u_index_in_ordered_cam_i == match_indices_in_ordered_cam_i)[0]
+                    if indices_of_match_with_ordered_cam_k.shape[0] != 0:  # match exists
+                        # if indices_of_match_with_ordered_cam_k.shape[0] != 1:
+                        #     print(indices_of_match_with_ordered_cam_k.shape)
+                        for index_of_match_with_ordered_cam_k in indices_of_match_with_ordered_cam_k:
+                            # ordered_cam_i already has the sp_name:
+                            self.Xus[ord_cam_k][sp_name] = match_indices_in_ordered_cam_i[index_of_match_with_ordered_cam_k]
+                            # delete column of the match
+                            match_indices_between_ordered_cam_i_and_k = np.delete(match_indices_between_ordered_cam_i_and_k, index_of_match_with_ordered_cam_k, 1)
+                            self.ms[ord_cam_i][ord_cam_k] = match_indices_between_ordered_cam_i_and_k
                 print("number of matches left between cam", ord_cam_i, "and", ord_cam_k, ": ", self.ms[ord_cam_i][ord_cam_k].shape)
 
 
