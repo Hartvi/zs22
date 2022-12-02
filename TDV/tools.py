@@ -260,9 +260,9 @@ def err_contributions(errs, theta=3):
 
 def Nmax(success_prob, inlier_ratio, number_of_params):
     # print(1-success_prob)
-    # print(1 - inlier_ratio**number_of_params)
+    # print(1 - inlier_ratio ** number_of_params)
     # print(inlier_ratio)
-    return math.log(0.99 - success_prob) / math.log(1.01 - inlier_ratio ** number_of_params)
+    return math.log(1.0 - success_prob) / math.log(1.00 - inlier_ratio ** number_of_params)
 
 
 def calc_F_R_t(R, t):

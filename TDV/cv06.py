@@ -82,6 +82,7 @@ def ransac(u1, u2, threshold=3):
             ui1, u2i, support = eval_mle(u1i, u2i, F, threshold)
 
             if support > best_support:
+                max_iters = tools.Nmax(0.99, u1i.shape[1] / u1.shape[1], 5)
                 best_support = support
                 best_F = F
                 best_R = R
