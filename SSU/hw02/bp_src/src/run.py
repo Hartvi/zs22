@@ -57,7 +57,7 @@ def experiment_XOR():
 def experiment_spirals():
     X_train, T_train, X_test, T_test = load_spirals()
     experiments = (
-        ('alpha = 0.01', 0.01),
+        ('alpha = 0.2', 0.2),
         ('alpha = 1', 1.0),
         ('alpha = 5', 5.0),
     )

@@ -112,7 +112,8 @@ def ransac(u1, u2, threshold=3):
     u1i = u1[:, inlier_indices]
     u2i = u2[:, inlier_indices]
     u1i, u2i = tools.u_correct_sampson(opt_F, u1i, u2i)
-    Xu = tools.Pu2X(P1, opt_P2, u1i, u2i)
+    # print(opt_P2)
+    Xu = tools.Pu2X(K @ P1, K @ opt_P2, u1i, u2i)
     return opt_F, opt_P2, inlier_indices, Xu
 
 

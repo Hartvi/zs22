@@ -61,8 +61,8 @@ class LinearLayer(object):
         :return: a list of two arrays [dW, db] corresponding to gradients of loss w.r.t. weights and biases, the shapes
         of dW and db are the same as the shapes of the actual parameters (self.W, self.b)
         """
-        dW = X.T @ delta_next  # fill lines with x.T weighted by delta
-        db = np.ones(X.shape[0]) @ delta_next
+        dW = X.T @ delta_next #/ X.shape[0]  # fill lines with x.T weighted by delta
+        db = np.ones(X.shape[0]) @ delta_next #/ X.shape[0]
         return [dW, db]
 
     def initialize(self):

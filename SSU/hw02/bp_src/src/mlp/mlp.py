@@ -74,8 +74,8 @@ class MLP(object):
     def gradient(self, X, T):
         """
         Computes gradient of loss w.r.t. all network parameters.
-        :param X: input data, shape (n_inputs, n_samples)
-        :param T: target labels, shape (n_outputs, n_samples)
+        :param X: input data, shape (n_samples, n_inputs)
+        :param T: target labels, shape (n_samples, n_outputs)
         :return: a dict of records in which key is the layer.name and value the output of grad function
         """
         # """
@@ -85,7 +85,8 @@ class MLP(object):
         layers = list(self.layers)
         num_of_layers = len(layers)
         deltas = [None for _ in range(num_of_layers)]
-        deltas.append(self.loss.delta(self.layers[-1].output, T))
+        # divide by batch size to get the average
+        deltas.append(self.loss.delta(self.layers[-1].output, T) / X.shape[0])
         for i in range(num_of_layers-1, -1, -1):
             layer = layers[i]
             delta_next = deltas[i+1]  # from last to first
