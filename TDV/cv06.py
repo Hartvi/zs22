@@ -14,8 +14,10 @@ import p5
 import tools
 
 npr = np.array
-rng = np.random.default_rng()
-K = np.loadtxt('C:/Users/jhart/PycharmProjects/zs22/TDV/scene_1/K.txt')
+
+rng_seed = 12347  # 1234 were okayish
+rng = np.random.default_rng(rng_seed)
+K = np.loadtxt('/home/hartvi/zs22/TDV/scene_1/K.txt')
 invK = np.linalg.inv(K)
 invTK = np.linalg.inv(K.T)
 

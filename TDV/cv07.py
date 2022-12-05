@@ -1,9 +1,13 @@
 import numpy as np
 import os
 import PIL.Image
-import p3p.python.p3p as p3p
+import p3p
 import math
 import tools
+from scipy.spatial.transform import Rotation
+from scipy import optimize
+
+import bundle_adjustment as ba
 import cv06
 
 npr = np.array
@@ -35,6 +39,29 @@ def isin_w_duplicates(x, y):
 def sort_ids(i1, i2) -> tuple:
     return tuple(sorted((i1, i2)))
 
+def opt_p3p(R, inlier_Xs, inlier_us, eps2):
+
+    def err_func(args):
+        rot_vec = args[:3]
+        new_t = args[3:6].reshape(-1,1)
+        tmp_R = Rotation.from_rotvec(rotvec=rot_vec).as_matrix()
+        new_R = tmp_R @ R
+        tmp_P = np.hstack([new_R, new_t])
+        temp_X = tmp_P @ inlier_Xs
+        indices_infront_camera = np.where(temp_X[2, :] > 0)[0]
+
+        X_p = inlier_Xs[:, indices_infront_camera]
+        subset_of_sorted_u_pixels = tools.p2e(inlier_us[:, indices_infront_camera])
+
+        u_proj = tools.p2e(cv06.K @ tmp_P @ X_p)
+
+        # eval error
+        err_elements = np.sum((u_proj - subset_of_sorted_u_pixels)**2, axis=0)
+        support = np.sum(err_elements)
+        return support
+    
+    return err_func
+
 
 def get_Rt_with_p3p(Xu_idx, u_idx, X, u_pixels, n_it, eps):
     assert X.shape[0] == 3 or X.shape[0] == 4, "3d point have to be either 3d or 4d (hom) along columns"
@@ -51,7 +78,7 @@ def get_Rt_with_p3p(Xu_idx, u_idx, X, u_pixels, n_it, eps):
     number_of_matches = len(Xu_idx)
     # up points need to be K undone first
     up_K_undone = tools.e2p(tools.p2e(cv06.invK @ u_pixels))
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(cv06.rng_seed)
 
     best_inlier_Xu_idx, best_inlier_u_idx = None, None
     best_n_inliers = 0
@@ -101,7 +128,7 @@ def get_Rt_with_p3p(Xu_idx, u_idx, X, u_pixels, n_it, eps):
 
             if support > best_support:
 
-                n_it = tools.Nmax(0.75, np.sum(maybe_inlier_indices) / number_of_matches, 3)
+                n_it = tools.Nmax(0.80, np.sum(maybe_inlier_indices) / number_of_matches, 3)
                 R = _R
                 t = _t
                 best_inlier_indices = maybe_inlier_indices
@@ -110,6 +137,46 @@ def get_Rt_with_p3p(Xu_idx, u_idx, X, u_pixels, n_it, eps):
                 best_support = support
                 print("max_iters: ", n_it, " current iter:", it, "p3p best support: ", support)
         it += 1
+
+
+    ig = np.zeros(6)
+    ig[3:6] = t.flatten()
+    xopt = optimize.fmin(func=opt_p3p(R, X[:, best_inlier_Xu_idx], u_pixels[:, best_inlier_u_idx], eps2), x0=ig)
+    rot_vec = xopt[:3]
+    _t = xopt[3:6].reshape((-1, 1))
+    _R = Rotation.from_rotvec(rotvec=rot_vec).as_matrix() @ R
+
+    _P = cv06.K @ np.hstack([_R, _t])
+
+    temp_X = np.hstack([_R, _t]) @ hom_sel_X
+    indices_infront_camera = np.where(temp_X[2, :] > 0)[0]
+
+    X_p = hom_sel_X[:, indices_infront_camera]
+    tmp_Xu_idx = Xu_idx[indices_infront_camera]
+    tmp_u_idx = u_idx[indices_infront_camera]
+    subset_of_sorted_u_pixels = tools.p2e(hom_sel_u_pixels[:, indices_infront_camera])
+
+    u_proj = tools.p2e(_P @ X_p)
+
+    # eval error
+    err_elements = np.sum((u_proj - subset_of_sorted_u_pixels)**2, axis=0)
+    maybe_inlier_indices = (err_elements < eps2)
+    errs = 1 - err_elements / eps2
+    errs[errs < 0] = 0
+    support = np.sum(errs)
+
+    inlier_Xu_idx = tmp_Xu_idx[maybe_inlier_indices]
+    inlier_u_idx = tmp_u_idx[maybe_inlier_indices]
+
+    if support > best_support:
+
+        n_it = tools.Nmax(0.80, np.sum(maybe_inlier_indices) / number_of_matches, 3)
+        R = _R
+        t = _t
+        best_inlier_indices = maybe_inlier_indices
+        best_inlier_Xu_idx = inlier_Xu_idx
+        best_inlier_u_idx = inlier_u_idx
+        best_support = support
 
     return R, t, best_inlier_Xu_idx, best_inlier_u_idx, best_inlier_indices
 
@@ -127,7 +194,7 @@ class ScenePoint:
 
 
 class CameraContainer:
-    def __init__(self, num_of_cams, threshold, root_path="C:/Users/jhart/PycharmProjects/zs22/TDV/scene_1"):
+    def __init__(self, num_of_cams, threshold, root_path="/home/hartvi/zs22/TDV/scene_1"):
         self.num_of_cams = min(num_of_cams, 12)
         # NEW VERSION
         self.threshold = threshold
@@ -283,15 +350,19 @@ class CameraContainer:
         self.P2s[best_tentative_green_cam_id] = np.hstack([R, t])
         # print("done p3p ransac: ", R, t)
         # TODO THIS IS A JANKY/WRONG WAY OF DOING THIS: should choose based on a better criterium
+        """
         _, unique_idx = np.unique(best_inlier_Xu_idx, return_index=True)
         X_names_to_be_kept_for_this_cam = best_inlier_Xu_idx[unique_idx]
         u_pixel_indices_to_be_kept_for_this_cam = best_inlier_u_idx[unique_idx]
+        """
+        X_names_to_be_kept_for_this_cam = best_inlier_Xu_idx
+        u_pixel_indices_to_be_kept_for_this_cam = best_inlier_u_idx
         # print(len(self.Xus[best_tentative_green_cam_id][0]))
         for k in range(len(X_names_to_be_kept_for_this_cam)):
             self.Xus[best_tentative_green_cam_id][0].append(X_names_to_be_kept_for_this_cam[k])
             self.Xus[best_tentative_green_cam_id][1].append(u_pixel_indices_to_be_kept_for_this_cam[k])
         # print(len(self.Xus[best_tentative_green_cam_id][0]))
-        assert len(set(X_names_to_be_kept_for_this_cam)) == len(X_names_to_be_kept_for_this_cam), "scene points should(?) be unique after p3p: "+str(len(set(X_names_to_be_kept_for_this_cam)))+" vs "+str(len(X_names_to_be_kept_for_this_cam))
+        # assert len(set(X_names_to_be_kept_for_this_cam)) == len(X_names_to_be_kept_for_this_cam), "scene points should(?) be unique after p3p: "+str(len(set(X_names_to_be_kept_for_this_cam)))+" vs "+str(len(X_names_to_be_kept_for_this_cam))
         self.green_cameras.remove(best_tentative_green_cam_id)
         self.red_cameras.add(best_tentative_green_cam_id)
         return best_tentative_green_cam_id
@@ -452,9 +523,14 @@ class CameraContainer:
 
 
 if __name__ == "__main__":
-    cc = CameraContainer(12, threshold=3)
-    i1, i2, m12_inlier_idx, scene_point_names = cc.initialize(1, 2)
+    cc = CameraContainer(12, threshold=5)
+    init_cams = (1, 6)
+    i1, i2, m12_inlier_idx, scene_point_names = cc.initialize(*init_cams)
     cc.start(i1, i2, m12_inlier_idx, scene_point_names)
+    Ps = [cc.Ps[init_cams[0]], cc.Ps[init_cams[1]]]
+    camera_array = ba.PySBA.KP_to_params(Ps, cv06.K)
+    cc.scene_points
+    pysba = ba.PySBA(cameraArray=camera_array, )
     for i in range(cc.num_of_cams-2):
         print("Number of red cams: ", len(cc.red_cameras))
         added_camera_id = cc.attach_camera()  # selects best tentative camera
@@ -462,16 +538,32 @@ if __name__ == "__main__":
         cc.reconstruct(added_camera_id)
         cc.cluster_verification()
         cc.finalize_camera()
-    # print(len(cc.Xus_tentative_u_idx[1]))
-    # print(len(cc.Xus_tentative_u_idx[1]))
 
-    # ch = CameraHandler(cc)
-    # ch.start()
-    pass
-    # class wrapper
-    # pairwise corrs
-    # tentative corresps => number of corresps that are inliers in the first cam
-    #
+    allX = tools.p2e(npr(cc.scene_points).T)
+    assert allX.shape[0]==3, "all Xs must be 3d non-homogeneous"
+    np.save("allX", allX)
+    cam_Ps = []
+    for k in range(1, cc.num_of_cams+1):
+        cam_Ps.append(cc.P2s[k])
+    cam_Ps = npr(cam_Ps)
+    np.save("Ps", npr(cam_Ps))
+    import ge
+    g = ge.GePly( 'out.ply' )
+    g.points( allX )  #, ColorAll ) # Xall contains euclidean points (3xn matrix), ColorAll RGB colors (3xn or 3x1, optional)
+    g.close()
+    print("number of Xs:", allX.shape[1])
+    print("number of Ps:", cam_Ps.shape[0])
+
+    # conditioning
+    new_Xs = np.delete(allX, np.where(np.linalg.norm(allX, axis=0) > 100), 1)
+
+    print(np.ptp(new_Xs, axis=1))
+
+    np.save("new_Xs", new_Xs)
+    g = ge.GePly( 'out_new.ply' )
+    g.points( new_Xs )  #, ColorAll ) # Xall contains euclidean points (3xn matrix), ColorAll RGB colors (3xn or 3x1, optional)
+    g.close()
+
 
 
 

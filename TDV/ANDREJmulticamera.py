@@ -4,7 +4,7 @@ from re import U
 import time
 
 from numpy.lib.type_check import real
-import utils as ut
+import tools as ut
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
@@ -16,18 +16,18 @@ from scipy.optimize import fmin
 
 import json
 
-from corresp import corresp
-from geom_export import ge
-from p5 import p5
-from p3p import p3p
+import corresp
+import ge
+import p5
+import p3p
 np.set_printoptions(suppress=True)
 
 # ---- USEFUL DEBUGGING TOOLS ----
-from icecream import ic          # call `ic()` in a function for orientation of where the code is now (instead of calling print("HERE")),
-                                 # use `ic(thing)` instead of print("thing: ", thing)
+# from icecream import ic          # call `ic()` in a function for orientation of where the code is now (instead of calling print("HERE")),
+#                                  # use `ic(thing)` instead of print("thing: ", thing)
 
-import snoop                     # add `@snoop above` a function to pretty print every step of it
-from loguru import logger        # add `@logger.catch` above a function to pretty print errors and the values that caused them
+# import snoop                     # add `@snoop above` a function to pretty print every step of it
+# from loguru import logger        # add `@logger.catch` above a function to pretty print errors and the values that caused them
 # import heartrate; heartrate.trace(browser=True)
 
 def get_F_with_p5p(u1, u2, m12, n_it, eps, K, vb=True):
@@ -518,16 +518,16 @@ def optim_func(x, K, Xs, u_pixels, R_0):
 
 T_START = time.time()
 
-path_to_imgs  = 'imgs'
-path_to_corrs = 'data/corrs'
-path_to_points = 'data/points'
+path_to_imgs  = '/home/hartvi/zs22/TDV/scene_1/imgs'
+path_to_corrs = '/home/hartvi/zs22/TDV/scene_1/corresp'
+path_to_points = '/home/hartvi/zs22/TDV/scene_1/corresp'
 
-img_names = [path_to_imgs + '/' + file for file in os.listdir(path_to_imgs)]
+# img_names = [path_to_imgs + '/' + file for file in os.listdir(path_to_imgs)]
 corr_names_short = [file for file in os.listdir(path_to_corrs)]
 corr_names = [path_to_corrs + '/' + file for file in os.listdir(path_to_corrs)]
 pnt_names = [path_to_points + '/' + file for file in os.listdir(path_to_points)]
 
-img_names.sort()
+# img_names.sort()
 corr_names.sort()
 corr_names_short.sort()
 pnt_names.sort()
@@ -554,6 +554,7 @@ combos = []
 for combination in corr_names_short:
     comb_i = combination[2:4]
     comb_j = combination[5:7]
+    print(comb_i, comb_j)
     pnts_i = all_points[comb_i]
     pnts_j = all_points[comb_j]
     indices_ij = np.loadtxt(path_to_corrs + '/m_' + comb_i + '_' + comb_j + '.txt', dtype='int')
