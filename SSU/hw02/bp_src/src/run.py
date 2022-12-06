@@ -79,8 +79,9 @@ def experiment_spirals():
         run_info = train(net, X_train, T_train, batch_size=len(X_train), alpha=alpha, X_test=X_test, T_test=T_test,
                          n_epochs=1000, verbose=True)
         run_info_dict[name] = run_info
+        plot_2D_classification(X_train, T_train, net)
+        plt.show()
         # plot_spirals(X_train, T_train, net)
-        # plt.show()
         # plot_convergence(run_info)
         # plt.show()
     plot_test_accuracy_comparison(run_info_dict)

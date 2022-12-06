@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.neural_network import _multilayer_perceptron
 
 
 # '''
@@ -36,6 +35,12 @@ class LossCrossEntropy(object):
 # '''
 
 
+def softmax(X):
+    e_x = np.exp(X.T - np.max(X, axis=1)).T
+    ret = (e_x.T / e_x.sum(axis=1)).T
+    return ret
+
+
 class LossCrossEntropyForSoftmaxLogits(object):
     def __init__(self, name):
         super(LossCrossEntropyForSoftmaxLogits, self).__init__()
@@ -44,42 +49,30 @@ class LossCrossEntropyForSoftmaxLogits(object):
 
     def forward(self, X, T):
         """
-        X: (i, s)
-        T: (i, s)
+        X: (s, i)
+        T: (s, i)
         """
         # ln(sum_j^K(x_j))
         exp_max = np.exp(X.T - np.max(X, axis=1)).T
         lns = np.log(np.sum(exp_max, axis=1))  # should be (s, )
-        # print("lns.shape: ", lns.shape)
-        # print("T.shape: ", T.shape)  # checked and they are the same
-        # print("X.shape: ", X.shape)  # checked and they are the same
         X_times_sum = -X.T + lns
-        # print("X_times_sum.shape: ", X_times_sum.shape)
         before_vertical_sum = (T.T*X_times_sum).T  # (i, s) - (s, ) i.e. add the sum columnwise to each element
-        # print("before_vertical_sum: ", before_vertical_sum.shape)
         ret = before_vertical_sum
-        # ret = np.sum(before_vertical_sum, axis=1)
-        assert ret.shape == T.shape, str(ret.shape[1])+" != "+ str(T.shape)
+        # print("SHAPE:", ret.shape)
+        ret = np.sum(before_vertical_sum, axis=1)
+        # assert ret.shape == T.shape, str(ret.shape[1])+" != "+ str(T.shape)
         # print("ret.shape: ", ret.shape)
         # print()
         return ret
 
     def delta(self, X, T):
         """
-        X: (i, s)
-        T: (i, s)
-        ret: (i, s)
+        X: (s, i)
+        T: (s, i)
+        ret: (s, i)
         """
-        # print("\nX.shape: ", X.shape)
-        # print("T.shape: ", T.shape)
-        exp_X = np.exp(X.T - np.max(X, axis=1)).T
-        summies = np.sum(exp_X, axis=1)  # should be (s, )
-        inv_summies = 1.0 / summies
-        # print("summies.shape: ", summies.shape)
-        # print("exp_X.shape: ", exp_X.shape)
-        # print("T.shape: ", T.shape)
-        # print("((summies - exp_X.T)*inv_summies).T.shape: ", ((summies - exp_X.T)*inv_summies).T.shape)
-        delta = T*((summies - exp_X.T)*inv_summies).T
+        # SOFTMAX - T
+        delta = softmax(X) - T
         return delta
 
 

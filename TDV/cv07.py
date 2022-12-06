@@ -527,10 +527,10 @@ if __name__ == "__main__":
     init_cams = (1, 6)
     i1, i2, m12_inlier_idx, scene_point_names = cc.initialize(*init_cams)
     cc.start(i1, i2, m12_inlier_idx, scene_point_names)
-    Ps = [cc.Ps[init_cams[0]], cc.Ps[init_cams[1]]]
-    camera_array = ba.PySBA.KP_to_params(Ps, cv06.K)
-    cc.scene_points
-    pysba = ba.PySBA(cameraArray=camera_array, )
+    # Ps = [cc.P2s[init_cams[0]], cc.P2s[init_cams[1]]]
+    # camera_array = ba.PySBA.KP_to_params(Ps, cv06.K)
+    # cc.scene_points
+    # pysba = ba.PySBA(cameraArray=camera_array, )
     for i in range(cc.num_of_cams-2):
         print("Number of red cams: ", len(cc.red_cameras))
         added_camera_id = cc.attach_camera()  # selects best tentative camera

@@ -15,7 +15,7 @@ import tools
 
 npr = np.array
 
-rng_seed = 12347  # 1234 were okayish
+rng_seed = 1234  # 1234 were okayish
 rng = np.random.default_rng(rng_seed)
 K = np.loadtxt('/home/hartvi/zs22/TDV/scene_1/K.txt')
 invK = np.linalg.inv(K)
