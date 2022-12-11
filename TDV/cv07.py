@@ -139,44 +139,44 @@ def get_Rt_with_p3p(Xu_idx, u_idx, X, u_pixels, n_it, eps):
         it += 1
 
 
-    ig = np.zeros(6)
-    ig[3:6] = t.flatten()
-    xopt = optimize.fmin(func=opt_p3p(R, X[:, best_inlier_Xu_idx], u_pixels[:, best_inlier_u_idx], eps2), x0=ig)
-    rot_vec = xopt[:3]
-    _t = xopt[3:6].reshape((-1, 1))
-    _R = Rotation.from_rotvec(rotvec=rot_vec).as_matrix() @ R
+    # ig = np.zeros(6)
+    # ig[3:6] = t.flatten()
+    # xopt = optimize.fmin(func=opt_p3p(R, X[:, best_inlier_Xu_idx], u_pixels[:, best_inlier_u_idx], eps2), x0=ig)
+    # rot_vec = xopt[:3]
+    # _t = xopt[3:6].reshape((-1, 1))
+    # _R = Rotation.from_rotvec(rotvec=rot_vec).as_matrix() @ R
 
-    _P = cv06.K @ np.hstack([_R, _t])
+    # _P = cv06.K @ np.hstack([_R, _t])
 
-    temp_X = np.hstack([_R, _t]) @ hom_sel_X
-    indices_infront_camera = np.where(temp_X[2, :] > 0)[0]
+    # temp_X = np.hstack([_R, _t]) @ hom_sel_X
+    # indices_infront_camera = np.where(temp_X[2, :] > 0)[0]
 
-    X_p = hom_sel_X[:, indices_infront_camera]
-    tmp_Xu_idx = Xu_idx[indices_infront_camera]
-    tmp_u_idx = u_idx[indices_infront_camera]
-    subset_of_sorted_u_pixels = tools.p2e(hom_sel_u_pixels[:, indices_infront_camera])
+    # X_p = hom_sel_X[:, indices_infront_camera]
+    # tmp_Xu_idx = Xu_idx[indices_infront_camera]
+    # tmp_u_idx = u_idx[indices_infront_camera]
+    # subset_of_sorted_u_pixels = tools.p2e(hom_sel_u_pixels[:, indices_infront_camera])
 
-    u_proj = tools.p2e(_P @ X_p)
+    # u_proj = tools.p2e(_P @ X_p)
 
-    # eval error
-    err_elements = np.sum((u_proj - subset_of_sorted_u_pixels)**2, axis=0)
-    maybe_inlier_indices = (err_elements < eps2)
-    errs = 1 - err_elements / eps2
-    errs[errs < 0] = 0
-    support = np.sum(errs)
+    # # eval error
+    # err_elements = np.sum((u_proj - subset_of_sorted_u_pixels)**2, axis=0)
+    # maybe_inlier_indices = (err_elements < eps2)
+    # errs = 1 - err_elements / eps2
+    # errs[errs < 0] = 0
+    # support = np.sum(errs)
 
-    inlier_Xu_idx = tmp_Xu_idx[maybe_inlier_indices]
-    inlier_u_idx = tmp_u_idx[maybe_inlier_indices]
+    # inlier_Xu_idx = tmp_Xu_idx[maybe_inlier_indices]
+    # inlier_u_idx = tmp_u_idx[maybe_inlier_indices]
 
-    if support > best_support:
+    # if support > best_support:
 
-        n_it = tools.Nmax(0.80, np.sum(maybe_inlier_indices) / number_of_matches, 3)
-        R = _R
-        t = _t
-        best_inlier_indices = maybe_inlier_indices
-        best_inlier_Xu_idx = inlier_Xu_idx
-        best_inlier_u_idx = inlier_u_idx
-        best_support = support
+    #     n_it = tools.Nmax(0.80, np.sum(maybe_inlier_indices) / number_of_matches, 3)
+    #     R = _R
+    #     t = _t
+    #     best_inlier_indices = maybe_inlier_indices
+    #     best_inlier_Xu_idx = inlier_Xu_idx
+    #     best_inlier_u_idx = inlier_u_idx
+    #     best_support = support
 
     return R, t, best_inlier_Xu_idx, best_inlier_u_idx, best_inlier_indices
 
@@ -264,7 +264,12 @@ class CameraContainer:
         # print("m_inlier_indices:", m_inlier_indices)
         self.Fs[start_cam1][start_cam2] = F
         self.P2s[start_cam1] = np.eye(3, 4)
+        # print(P2)
         self.P2s[start_cam2] = P2
+        # self.P2s[start_cam2] = np.hstack([P2[:3, :3], P2[:, 3:]])
+        # self.us[start_cam2]
+        # print(self.P2s[start_cam2])
+        # exit(1)
         self.m_inlier_indices[start_cam1][start_cam2] = m_inlier_indices
 
         u1_inlier_indices = m1[m_inlier_indices]
@@ -523,8 +528,8 @@ class CameraContainer:
 
 
 if __name__ == "__main__":
-    cc = CameraContainer(12, threshold=5)
-    init_cams = (1, 6)
+    cc = CameraContainer(12, threshold=1)
+    init_cams = (1, 2)
     i1, i2, m12_inlier_idx, scene_point_names = cc.initialize(*init_cams)
     cc.start(i1, i2, m12_inlier_idx, scene_point_names)
     # Ps = [cc.P2s[init_cams[0]], cc.P2s[init_cams[1]]]
@@ -549,6 +554,7 @@ if __name__ == "__main__":
     np.save("Ps", npr(cam_Ps))
     import ge
     g = ge.GePly( 'out.ply' )
+    # allX = np.hstack([allX[:, npr(list(cc.Xus[1][0]))], allX[:, npr(list(cc.Xus[2][0]))]])
     g.points( allX )  #, ColorAll ) # Xall contains euclidean points (3xn matrix), ColorAll RGB colors (3xn or 3x1, optional)
     g.close()
     print("number of Xs:", allX.shape[1])

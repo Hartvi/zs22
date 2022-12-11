@@ -46,7 +46,13 @@ def train(net, X_train, T_train, batch_size=1, n_epochs=2, alpha=0.1, X_test=Non
                                                                   np.nanmean(acc_train), np.nanmean(acc_test)))
 
     process_info('initial')
+    mean_weights = list()
     for epoch in range(1, n_epochs + 1):
+        epoch_layers = list()
+        for layer in net.layers:
+            if layer.has_params():
+                epoch_layers.append([np.mean(np.abs(layer.W)), np.mean(np.abs(layer.b))])
+        mean_weights.append(epoch_layers)
         offset = 0
         while offset < n_samples:
             last = min(offset + batch_size, n_samples)
@@ -63,4 +69,11 @@ def train(net, X_train, T_train, batch_size=1, n_epochs=2, alpha=0.1, X_test=Non
         if verbose:
             print()
         process_info(epoch)
+    epoch_layers = list()
+    for layer in net.layers:
+        if layer.has_params():
+            epoch_layers.append([np.mean(np.abs(layer.W)), np.mean(np.abs(layer.b))])
+    mean_weights.append(epoch_layers)
+    np.save("epoch_weights.npy", np.array(mean_weights))
+
     return run_info

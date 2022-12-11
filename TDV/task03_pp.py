@@ -33,12 +33,13 @@ ax = fig.add_subplot(projection='3d')
 
 for k, P in enumerate(Ps):
     # P = Ps[cam_id]
+    print("P", k+1, "det:", np.linalg.det(P[:3, :3]))
     P_no_K = cv06.invK @ P
     t = P_no_K[:,3:]
     R = P_no_K[:3,:3]
-    C = np.linalg.inv(-R) @ t
+    C = -np.linalg.inv(R) @ t
     z = np.array([0,0,1]).reshape(-1,1)
-    z_rot = R @ z
+    z_rot = R.T @ z
     cam_positions = np.concatenate((cam_positions,C),axis = 1)
 
     line = np.hstack([C,(C + z_rot)])

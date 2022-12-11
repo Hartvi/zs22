@@ -154,16 +154,10 @@ def EutoRt(E, u1p, u2p):
             Ps_in_front_camera.append(P)
 
     if len(Ps_in_front_camera) == 0:
-        # return np.eye(3),t1
         return np.empty((3, 3)), np.empty((3, 1))
     elif len(Ps_in_front_camera) == 1:
-        # print("ok")
         return Ps_in_front_camera[0][:, :3], Ps_in_front_camera[0][:, -1].reshape(-1, 1)
     else:
-        # print(len(Ps_in_front_camera))
-        print("tohle by nemelo nastat")
-        # return np.eye(3),t1
-        # print("ooooooof")
         return Ps_in_front_camera[0][:, :3], Ps_in_front_camera[0][:, -1].reshape(-1, 1)
 # """
 

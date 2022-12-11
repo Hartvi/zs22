@@ -151,14 +151,19 @@ def experiment_MNIST():
 
     run_info = train(net, X_train, T_train, batch_size=3000, alpha=1e-1, X_test=X_test, T_test=T_test, n_epochs=100,
                      verbose=True)
-    # plot_convergence(run_info)
-    # plt.show()
+    plot_convergence(run_info)
+    plt.show()
 
     with open('MNIST_run_info.p', 'wb') as f:
         pickle.dump(run_info, f)
 
 
 if __name__ == '__main__':
+    # import time
+    # start_time = time.time()
+    # for i in range(150):
+        # experiment_XOR()
+    # print("TIME:", time.time()-start_time)
     # experiment_XOR()
 
     experiment_spirals()

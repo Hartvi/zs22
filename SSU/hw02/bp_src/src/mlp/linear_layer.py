@@ -30,13 +30,7 @@ class LinearLayer(object):
         :return: layer output, shape (n_samples, n_units)
         """
         # W doesnt depend on number of samples => multiply from the right hand side
-        # W: (n_o, n_i), b: (n_o, )
-        # print("W: ", self.W)
-        # print("forward pass")
-        # print("X.shape: ", X.shape)
-        # print("self.W @ X: ", X @ self.W)
         ret = X @ self.W + self.b
-        # print("self.output.shape: ", self.output.shape)
         return ret
 
     def delta(self, Y, delta_next):

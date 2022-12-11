@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# '''
+
 class MLP(object):
     def __init__(self, n_inputs, layers, loss, output_layers=[]):
         """
@@ -99,7 +99,5 @@ class MLP(object):
             if layer.has_params():
                 grads[layer.name] = layer.grad(prev_layers_output_ie_this_layers_input, delta_next)
         return grads
-        # """
-# '''
 
 

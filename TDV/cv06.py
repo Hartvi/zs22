@@ -15,7 +15,7 @@ import tools
 
 npr = np.array
 
-rng_seed = 1234  # 1234 were okayish
+rng_seed = 12345  # 1234 were okayish
 rng = np.random.default_rng(rng_seed)
 K = np.loadtxt('/home/hartvi/zs22/TDV/scene_1/K.txt')
 invK = np.linalg.inv(K)
@@ -103,7 +103,7 @@ def ransac(u1, u2, threshold=3):
     opt_t = xopt[3:6].reshape((-1, 1))
     opt_R = Rotation.from_rotvec(rotvec=rot_vec).as_matrix() @ best_R
     opt_F = tools.calc_F(invK=invK, t=opt_t.flatten(), R=opt_R)
-    opt_P2 = np.hstack([opt_R, opt_t])
+    opt_P2 = np.hstack([opt_R, -opt_t])
 
     # get stuff for the next task
     errs = tools.err_F_sampson(opt_F, u1, u2)
@@ -120,7 +120,7 @@ def ransac(u1, u2, threshold=3):
 
 
 def plot_lines(im1, im2):
-    root_path = "C:/Users/jhart/PycharmProjects/zs22/TDV/scene_1"
+    root_path = "/home/hartvi/zs22/TDV/scene_1"
     corresp = np.loadtxt(os.path.join(root_path, "corresp", f"m_{im1}_{im2}.txt"), dtype=int)
     points1 = np.loadtxt(os.path.join(root_path, "corresp", f"u_{im1}.txt"))
     points2 = np.loadtxt(os.path.join(root_path, "corresp", f"u_{im2}.txt"))

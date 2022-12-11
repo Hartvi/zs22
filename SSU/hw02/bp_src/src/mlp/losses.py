@@ -1,7 +1,6 @@
 import numpy as np
 
 
-# '''
 class LossCrossEntropy(object):
     def __init__(self, name):
         super(LossCrossEntropy, self).__init__()
@@ -32,7 +31,6 @@ class LossCrossEntropy(object):
         # d(-t*log(x)) / d(x) = -t/x
         # print(X.shape, T.shape)
         return -T/X
-# '''
 
 
 def softmax(X):
