@@ -1,5 +1,8 @@
+from scipy.spatial.transform import Rotation
+from typing import *
 import numpy as np
-from typing import List, Union, Tuple
+
+npr = np.array
 
 
 class ClassWUnits:
@@ -61,6 +64,46 @@ class ClassWUnits:
         return ret
 
 
+class Orientation:
+    def __init__(self, R, t: Iterable=(), deg=False):
+        if R.shape == (4,4):
+            self.R = R[:3, :3]
+            self.t = R[:3, -1]
+            self.transform = R
+        elif isinstance(R, Rotation):
+            self.R = R.as_matrix()
+        elif isinstance(R, np.ndarray):
+            if R.size == 3:
+                self.R = Rotation.from_euler('xyz', R, degrees=deg)
+            else:
+                assert R.size == 9, "R must be a matrix or euler angles"
+                self.R = R
+        if not hasattr(self, 't'):
+            assert len(t) == 3, "translation must be 3d: t="+str(t)
+            self.t = npr(t)
+            self.transform = Orientation.stackify_Rt(self.R, self.t)
+        # print(self.transform)
+
+    @staticmethod
+    def stackify_Rt(R, t):
+        return np.vstack([np.hstack((R,t.reshape(-1, 1))), npr([[0,0,0,1]])])
+    
+    def __matmul__(self, other):
+        # print(self.transform)
+        # print(other)
+        if isinstance(other, Orientation):
+            T = self.transform @ other.transform
+        else: 
+            T = self.transform @ other
+        return Orientation(T)
+
+    def get_rotation(self):
+        return Rotation.from_matrix(self.R)
+    
+    def __repr__(self) -> str:
+        return 'R: ' + str(self.R[0, :]) + ' t: ' + str(self.t[0]) + '\n   ' + str(self.R[1, :]) + '    ' + str(self.t[1]) + '\n   ' + str(self.R[2, :]) + '    ' + str(self.t[2]) 
+
+
 if __name__ == "__main__":
     a = ClassWUnits(2.0, "m")
     b = ClassWUnits(3.0, "s")
@@ -69,7 +112,15 @@ if __name__ == "__main__":
     print(a)
     print("5*a: ", 5*a)
     print(b)
-    print(a + b)
+    try:
+        print(a + b)
+    except:
+        print("see? adding", a, 'and', b, 'doesnt work')
+
+    # ORIENTAITION
+    t1 = Orientation(np.eye(3), npr([1, 0, 0]))
+    t2 = Orientation(np.eye(3), npr([1, 1, 1]))
+    print(t1@t2)
 
 
 

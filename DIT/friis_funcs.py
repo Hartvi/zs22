@@ -13,18 +13,27 @@ def watt_to_dbm(watts):
     return 10*np.log10(watts) + 30
 
 
-def f_to_lbd(f):
+def f_to_lambda(f):
     return c/f
 
 
 def friis_Pr(Pt, Gt, Gr, f, d):
-    lbd = f_to_lbd(f)
+    lbd = f_to_lambda(f)
     return Pt * Gt * Gr * (lbd / (4 * math.pi * d))**2
 
 
 def friis_Pr_log(Pt, Gt, Gr, f, d):
-    lbd = f_to_lbd(f)
+    lbd = f_to_lambda(f)
     return Pt + Gt + Gr + 20 * np.log10((lbd / (4 * math.pi * d))**2)
+
+
+def VSWR_to_gamma(VSWR):
+    pass
+
+
+def gamma_to_VSWR(gamma):
+    abs_gamma = math.abs(gamma)
+    return (1+abs_gamma) / (1-abs_gamma)
 
 
 class Values:
@@ -35,12 +44,13 @@ class Values:
 
 
 class Antenna:
+    """
+    rotation: x: right, y: down, z: forward
+    """
     # https://en.wikipedia.org/wiki/Directivity#Definition
-    def __init__(self, t, R, azimuth_hpbw, zenith_hpbw, polarization=npr((0, 1, 0)), frequency=9.15e6, peak_gain=None, return_loss=None, vswr=None, eirp=None):
-        self.t = t
-        self.R = R
-        self.azimuth_hpbw = azimuth_hpbw
-        self.zenith_hpbw = zenith_hpbw
+    def __init__(self, orientation, hpbw, polarization=npr((0, 1, 0)), frequency=9.15e6, peak_gain=None, return_loss=None, vswr=None, eirp=None):
+        self.orientation = orientation
+        self.hpbw = hpbw
         self.polarization = polarization
         self.frequency = frequency
         self.peak_gain = peak_gain
@@ -58,5 +68,9 @@ class Beam:
 
 
 if __name__ == "__main__":
+    r = npr([1,0,0])
+    r = Rotation.from_rotvec(r)  # type: Rotation
+    # Rotation.as_rotvec(r)
+    print(r.as_mrp())
     pass
 
