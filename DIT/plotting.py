@@ -15,6 +15,8 @@ vized = lambda x: np.vectorize(x, [float])
 
 PI = np.pi
 TOOPI = 2*PI
+HALFPI = PI/2
+SQRT2 = mt.sqrt(2)
 ISOTROPIC_AMPLITUDE_2D = 1/TOOPI          # for convenience the integral over the circle is 1
 ISOTROPIC_AMPLITUDE_3D = 1/2/mt.sqrt(PI)  # for convenience the integral over the surface is 1
 
@@ -36,7 +38,7 @@ def normalized_to_2pi(func):
 
 def figure8(balance, squeeze=0, squeeze_limit=0.9):
 
-    print('balance', balance, 'squeeze', squeeze)
+    # print('balance', balance, 'squeeze', squeeze)
     # assert 0<=balance<=1, "balance must be in interval [0,1]"
     balance = np.clip(balance, 0, 1)
     counter_balance = balance - 1
@@ -97,25 +99,75 @@ def plot_func(func, samples=100):
     ax.axis('equal')
     # normalized_plot(ax, lin, flin)
     # normalized_plot(ax, lin, cumul_int(flin, lin))
+    ax.plot(lin, flin)
+    ax.plot(lin, cumul_int(flin, lin))
     xs, ys = polar2euclid(lin, flin)
     ax.plot(xs, ys)
     xs, ys = polar2euclid(lin, clin)
     ax.plot(xs, ys)
-    xs, ys = polar2euclid(lin, flin/clin)
-    ax.plot(xs, ys)
+    # xs, ys = polar2euclid(lin, flin/clin)
+    # ax.plot(xs, ys)
     plt.show()
     # ax = fig.add_subplot(projection='3d')
 
 
-if __name__ == '__main__':
-    
+def find_func(hpbw, max_amplitude):
 
-    optres = opt.fmin(lambda x: (4.8 - create_func(figure8(x[0], x[1]))(PI/2)/ISOTROPIC_AMPLITUDE_2D)**2, x0=npr([0.5, 0.3]))
-    # TODO HPBW CRITERION
-    figure8_antenna_func = create_func(figure8(optres[0], squeeze=optres[1], squeeze_limit=0.99))
-    print("max forward gain", figure8_antenna_func(PI/2)/ISOTROPIC_AMPLITUDE_2D)
-    print("balance:", optres[0], " squeeze:", optres[1])
-    plot_func(figure8_antenna_func)
+    hhpbw = hpbw/2
+    print("PI-hpbw/2:", (HALFPI - hhpbw)/PI*180)
+    half_max = max_amplitude/SQRT2
+    def err_func(arg):
+        err = 0.0
+        new_func = lambda x: (create_func(figure8(arg[0], arg[1]))(x))
+        # err = new_func(HALFPI)
+        # err = (err - max_amplitude)**2
+        err += (new_func(HALFPI - hhpbw) - half_max)**2
+        # err += 0.001*(new_func(3*HALFPI))**2
+        return err
+    return err_func
+
+
+def figureO(squeeze, squeeze_limit=0.9):
+    return figure8(0.95, squeeze, squeeze_limit)
+
+
+def find_figO(hpbw, balance=0.95):
+    hhpbw = hpbw/2
+    # print("PI-hpbw/2:", (HALFPI - hhpbw)/PI*180)
+    def err_func(arg):
+        new_func = lambda x: figureO(arg)(x)
+        err = (new_func(HALFPI) - new_func(HALFPI - hhpbw)*SQRT2)**2
+        return err
+    for i in range(5):
+        opt_res = opt.fmin(err_func, x0=0.3)
+        print(opt_res)
+    return vized(figureO(opt_res[0]))
+    # return opt_res
+    # return err_func
+
+if __name__ == '__main__':    
+
+    max_amplitude = 4.8
+    hpbw = 120.0/180.0*PI
+    # antenna_func = vized(figureO(0.0))
+    antenna_func = find_figO(hpbw)
+    print("max val:", antenna_func(HALFPI), ' half val:', antenna_func(HALFPI-hpbw/2))
+    plot_func(antenna_func)
+
+    hpbw = 60.0/180.0*PI
+    antenna_func = find_figO(hpbw)
+    # antenna_func = vized(figureO(0.5))
+    # print("hpbw ratio:", antenna_func(HALFPI-hpbw/2)/antenna_func(HALFPI))
+    print("max val:", antenna_func(HALFPI), ' half val:', antenna_func(HALFPI-hpbw/2))
+    plot_func(antenna_func)
+
+    # optres = opt.fmin(find_func(hpbw, max_amplitude), x0=npr([0.5, 0.5]))
+    # antenna_func = create_func(figure8(optres[0], squeeze=optres[1], squeeze_limit=0.99))
+    # optres = opt.fmin(lambda x: (create_func(figureO(x[0]))(PI/2))**2, x0=npr([0.5, 0.3]))
+    # opt_res = find_figO(hpbw)
+    # antenna_func = vized(figureO(opt_res[0]))
+    # print("max forward gain", antenna_func(PI/2)/ISOTROPIC_AMPLITUDE_2D)
+    # print("balance:", optres[0], " squeeze:", optres[1])
     # double_func = lambda x: figure8_antenna_func(x)*2
     # plot_func(double_func)
     # print(optres)
