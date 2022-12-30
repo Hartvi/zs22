@@ -122,5 +122,19 @@ if __name__ == "__main__":
     t2 = Orientation(np.eye(3), npr([1, 1, 1]))
     print(t1@t2)
 
+    import itertools as it
+    rot90 = npr([[0, -1], [1, 0]])
+    # cartesian product of image width and length
+    w,h=4,4
+    random_image = np.random.randn(h,w)
+    lelel = npr(list(it.product(np.arange(w), np.arange(h)))).T
+    print(random_image)
+    print(random_image[lelel[0], lelel[1]].reshape((h,w)) == random_image)
+    # print(lelel)
+    rotated_lelel = rot90 @ lelel + npr([[w-1], [0]])
+    # print(rotated_lelel)
+    print(random_image[rotated_lelel[0], rotated_lelel[1]].reshape((h,w)))
+    
+
 
 
