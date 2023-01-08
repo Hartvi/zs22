@@ -28,30 +28,14 @@ class Antenna:
         self.frequency = frequency
         self.wave_length = c/frequency
         # should be a list of the power funcs for each axis xyz
-        self.power_funcs = lambda x: npr([power_funcs[0](x[0]), power_funcs[1](x[1]), power_funcs[2](x[2])])
+        self.power_funcs = power_funcs
+        self.eval_power_funcs = lambda x: npr([power_funcs[0](x[0]), power_funcs[1](x[1]), power_funcs[2](x[2])])
         self.antenna_rotation = antenna_rotation
         # vector points up to correspond to default antenna rotation
         self.polarization_vector = antenna_rotation @ npr([[0, 0, 1]]).T
         self.direction_vector = antenna_rotation @ npr([[0, 1, 0]]).T
         self.base_gain = base_gain
     
-    def eval(self, xyz, logify=False, include_amplitude=True):
-        x,y,z = self.antenna_rotation @ xyz
-        
-        angles = npr([np.arctan2(z, y), np.arctan2(x, z), np.arctan2(y, x)])
-        dists = np.linalg.norm(xyz, axis=0)
-        
-        power_gains = self.power_funcs(angles)  # (3, n)
-        power_gain = np.prod(power_gains, axis=0)*self.base_gain  # (n, )
-        # print(power_gain.shape)
-        phases = (dists % self.wave_length)*TOOPI
-        amplitude_vector = (np.sin(phases) * self.polarization_vector)
-        amplitudes = (self.wave_length/(4*np.pi*dists))**2
-        if logify:
-            return 10*np.log10(power_gain) + 10*np.log10((amplitudes if include_amplitude else 1)), amplitude_vector
-        else:
-            return power_gain*(amplitudes if include_amplitude else np.ones(amplitudes.shape)), amplitude_vector
-
 
 class PatchAntenna(Antenna):
     def __init__(self, antenna_rotation, frequency=915e6, base_gain=4.8, hpbw_z=120.0, hpbw_x=62.0, balance_z=0.95, balance_x=0.95) -> None:
@@ -71,35 +55,48 @@ class PatchAntenna(Antenna):
         
         super().__init__(frequency, power_funcs, antenna_rotation, base_gain)
 
+    def eval(self, xyz, logify=False, include_amplitude=True):
+        x,y,z = self.antenna_rotation @ xyz
+        
+        angles = npr([np.arctan2(z, y), np.arctan2(x, z), np.arctan2(y, x)])
+        # print(angles)
+        dists = np.linalg.norm(xyz, axis=0)
+        
+        power_gains = self.eval_power_funcs(angles)  # (3, n)
+        power_gain = np.prod(power_gains, axis=0)*self.base_gain  # (n, )
+        # print(power_gain.shape)
+        phases = (dists % self.wave_length)*TOOPI
+        amplitude_vector = (np.sin(phases) * self.polarization_vector)
+        amplitudes = (self.wave_length/(4*np.pi*dists))**2
+        if logify:
+            return 10*np.log10(power_gain) + 10*np.log10((amplitudes if include_amplitude else 1)), amplitude_vector
+        else:
+            return power_gain*(amplitudes if include_amplitude else np.ones(amplitudes.shape)), amplitude_vector
+
 
 class RodAntenna(Antenna):  # TODO: finish the power funcs so that it takes ony the angle between z and the xy plane and has a radially symmetrical radiation characteristic
-    def __init__(self, antenna_rotation, frequency=915e6, base_gain=1.5, hpbw_y=80.0, hpbw_x=80.0, balance_y=0.5, balance_x=0.5) -> None:
+    def __init__(self, antenna_rotation, frequency=915e6, base_gain=1.5, hpbw=80.0) -> None:
 
-        max_power = 4.8
         # NOTE: y is the direction it is radiating in, thus it doesn't affect others, i.e. unity gain
         # base_gains = npr([np.sqrt(max_power), 1, np.sqrt(max_power)])
-        hpbw = hpbw_y/180.0*PI
-        antenna_func_y = find_figO(hpbw, balance=balance_y)
-        antenna_func_y = cosinify(antenna_func_y)
-
-        hpbw = hpbw_x/180.0*PI
-        antenna_func_x = find_figO(hpbw, balance=balance_x)
-        antenna_func_x = cosinify(antenna_func_x)
+        hpbw = hpbw/180.0*PI
+        antenna_func = find_figO(hpbw, balance=1)
+        # antenna_func = cosinify(antenna_func)
 
         antenna_func_z = vized(lambda _: 1.0)
-        power_funcs = npr([antenna_func_x, antenna_func_y, antenna_func_z])
+        antenna_func_y = vized(lambda _: 1.0)
+        power_funcs = npr([antenna_func, antenna_func_y, antenna_func_z])
         
         super().__init__(frequency, power_funcs, antenna_rotation, base_gain)
 
     def eval(self, xyz, logify=False, include_amplitude=True):
-        x,y,z = self.antenna_rotation @ xyz
+        rot_xyz = self.antenna_rotation @ xyz
         
-        angle = np.arctan2([z, np.sqrt(x**2+y**2)])
+        angle = np.arctan2(np.linalg.norm(rot_xyz[:2], axis=0), rot_xyz[2])
         dists = np.linalg.norm(xyz, axis=0)
         
-        power_gains = self.power_funcs(angles)  # (3, n)
-        power_gain = np.prod(power_gains, axis=0)*self.base_gain  # (n, )
-        # print(power_gain.shape)
+        power_gains = self.power_funcs[0](angle)
+        power_gain = power_gains*self.base_gain  # (n, )
         phases = (dists % self.wave_length)*TOOPI
         amplitude_vector = (np.sin(phases) * self.polarization_vector)
         amplitudes = (self.wave_length/(4*np.pi*dists))**2
@@ -244,18 +241,4 @@ def maxify_func(func, amplitude):
 def cosinify(func):
     return lambda x: func(x+HALFPI)
 
-
-def create_func_w_hpbw(hpbw, deg=True, func_type='o', func_params={'balance': 0.95}, cosine=False):
-    
-    if deg:
-        hpbw /= 180.0*PI
-    if func_type == 'o':
-        antenna_func = find_figO(hpbw, **func_params)
-    else:
-        raise NotImplementedError('Figure 8 func hasn\'t been implemented yet')
-        antenna_func = find_fig8(hpbw, **func_params)
-
-    if cosine:
-        antenna_func = cosinify(antenna_func)
-    ...
 

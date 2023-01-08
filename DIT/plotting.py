@@ -40,12 +40,12 @@ def plot_antenna_characteristic_3d(antenna: Antenna):
     # antenna = Antenna(915e6, funcs, np.eye(3), base_gains=npr([np.sqrt(4.8), 1, np.sqrt(4.8)]))
     number_of_sections = 40
     cube_side = 1
-    # x_range = (-2*cube_side, 2*cube_side)
-    # y_range = (0, 4*cube_side)
-    # z_range = (-2*cube_side, 2*cube_side)
-    x_range = (-2*cube_side, 2*cube_side)
-    y_range = (-2*cube_side, 2*cube_side)
-    z_range = (-2*cube_side, 2*cube_side)
+    x_range = (-1*cube_side, 1*cube_side)
+    y_range = (0, 2*cube_side)
+    z_range = (-1*cube_side, 1*cube_side)
+    x_range = (-1*cube_side, 1*cube_side)
+    y_range = (-1*cube_side, 1*cube_side)
+    z_range = (-1*cube_side, 1*cube_side)
     eval_space_range_x = np.linspace(*x_range, number_of_sections)
     eval_space_range_y = np.linspace(*y_range, number_of_sections//2)
     eval_space_range_z = np.linspace(*z_range, number_of_sections)
@@ -82,12 +82,13 @@ def plot_antenna_characteristic_3d(antenna: Antenna):
         ax.set_xlim3d(x_range)
         ax.set_ylim3d(y_range)
         ax.set_zlim3d(z_range)
+        ax.set_title('Patch antenna characteristic')
         
         # adjust the main plot to make room for the sliders
         fig.subplots_adjust(left=0.25, bottom=0.25)
 
         # Make a horizontal slider to control the frequency.
-        axfreq = fig.add_axes([0.25, 0.1, 0.65, 0.03])
+        axfreq = fig.add_axes([0.5, 0.05, 0.3, 0.03])
         valmax = -3
         valmin = -6
         freq_slider = Slider(
@@ -134,13 +135,13 @@ if __name__ == '__main__':
     # antenna = Antenna(915e6, funcs, np.eye(3), base_gains=npr([np.sqrt(max_power), 1, np.sqrt(max_power)]))
     
     # hpbw = 80.0/180.0*PI
-    # antenna_func_z = find_figO(hpbw, balance=0.5)
+    # antenna_func_z = find_figO(hpbw, balance=1)
     # plot_func(antenna_func_z)
     # exit(1)
     norot = np.eye(3)
     zrot = npr([[0, 1, 0], [-1, 0, 0], [0, 0, 1]])
-    # antenna = PatchAntenna(zrot)
-    antenna = RodAntenna(norot)
+    antenna = PatchAntenna(norot)
+    # antenna = RodAntenna(norot)
     plot_antenna_characteristic_3d(antenna=antenna)
     
     # lnsp = np.linspace(0, TOOPI, 100)
