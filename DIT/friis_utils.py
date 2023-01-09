@@ -7,7 +7,6 @@ from scipy import optimize as opt
 from typing import *
 import itertools as it
 
-from class_w_units import Orientation
 from friis_utils import *
 
 npr = np.array
@@ -104,17 +103,6 @@ class RodAntenna(Antenna):  # TODO: finish the power funcs so that it takes ony 
             return 10*np.log10(power_gain) + 10*np.log10((amplitudes if include_amplitude else 1)), amplitude_vector
         else:
             return power_gain*(amplitudes if include_amplitude else np.ones(amplitudes.shape)), amplitude_vector
-
-
-
-class WaveUnit(Orientation):
-    def __init__(self, pva, R, t: Iterable = ..., ):
-        super().__init__(R, t)
-        assert len(pva) == 3, "Phase Value Angle vector (pva) len != 3! "+str(len(pva))
-        self.pva = pva
-    
-    def step():
-        ...
 
 
 def polar2euclid(theta, r):

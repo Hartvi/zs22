@@ -2,7 +2,6 @@ import numpy as np
 import math
 import matplotlib.pyplot as plt
 from scipy.spatial.transform import Rotation
-from class_w_units import ClassWUnits as CLU
 import os
 
 join = os.path.join
@@ -57,13 +56,6 @@ def VSWR_to_gamma(VSWR):
 def gamma_to_VSWR(gamma):
     abs_gamma = math.abs(gamma)
     return (1+abs_gamma) / (1-abs_gamma)
-
-
-class Values:
-    base_frequency = CLU(915e6, 'Hz')
-    rad = CLU(1.0, 'rad')
-    watt = CLU(1.0, 'W')
-    dB = CLU(1.0, 'dB')
 
 
 class Antenna:
@@ -191,8 +183,8 @@ if __name__ == "__main__":
         i+=1
 
     polarization_pairs = [[antennas[0], antennas[0]], [antennas[0], antennas[0]], [antennas[1], antennas[0]]]
-    rotation_measurement1 = {'d': 0.3, 'mV': [457, 372, 254, 108,  8], 'axis': 'y'}
-    rotation_measurement2 = {'d': 0.4, 'mV': [308, 255, 126, 28,   6], 'axis': 'x'}
+    rotation_measurement1 = {'d': 0.3, 'mV': [457, 372, 254, 118,  8], 'axis': 'y'}
+    rotation_measurement2 = {'d': 0.4, 'mV': [308, 255, 116, 28,   6], 'axis': 'x'}
     rotation_measurement3 = {'d': 0.4, 'mV': [555, 500, 335, 180, 85], 'axis': 'z'}
     rotation_measurements = [rotation_measurement1, rotation_measurement2, rotation_measurement3]
     

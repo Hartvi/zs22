@@ -9,7 +9,6 @@ from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider, Button
 import itertools as it
 
-from class_w_units import Orientation
 from friis_utils import *
 
 
